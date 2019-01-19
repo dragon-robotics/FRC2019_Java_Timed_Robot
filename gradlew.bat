@@ -1,8 +1,4 @@
 @if "%DEBUG%" == "" @echo off
-<<<<<<< HEAD
-
-=======
->>>>>>> 6996f4f27a9638fbab561aad3e16610bb371e008
 @rem ##########################################################################
 @rem
 @rem  Gradle startup script for Windows
