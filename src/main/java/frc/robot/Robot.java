@@ -17,7 +17,9 @@ import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.buttons.JoystickButton;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
-import edu.wpi.first.wpilibj.Talon;
+
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
 
 /**
@@ -32,12 +34,14 @@ public class Robot extends TimedRobot {
   private final PWMVictorSPX m_frontRight = new PWMVictorSPX(4);
   private final PWMVictorSPX m_frontLeft = new PWMVictorSPX(3);
   SpeedControllerGroup m_front = new SpeedControllerGroup(m_frontRight, m_frontLeft);
+
   private final PWMVictorSPX m_rearRight = new PWMVictorSPX(2);
   private final PWMVictorSPX m_rearLeft = new PWMVictorSPX(1);
   SpeedControllerGroup m_rear = new SpeedControllerGroup(m_rearRight, m_rearLeft);
+
   private final DifferentialDrive m_robotDrive
     = new DifferentialDrive(m_front, m_rear);
-  private final Talon Lifter = new Talon(5);
+  private final WPI_TalonSRX Lifter = new WPI_TalonSRX(1);
   private final Joystick m_stick = new Joystick(0);
   private final JoystickButton m_LB = new JoystickButton(m_stick, 5);
   private final JoystickButton m_RB = new JoystickButton(m_stick, 6);
