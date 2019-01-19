@@ -8,6 +8,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.Joystick;
+<<<<<<< HEAD
 import edu.wpi.first.wpilibj.PWMTalonSRX;
 import edu.wpi.first.wpilibj.PWMVictorSPX;
 import edu.wpi.first.wpilibj.Spark;
@@ -19,6 +20,12 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.Talon;
 
+=======
+import edu.wpi.first.wpilibj.PWMVictorSPX;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+>>>>>>> 6996f4f27a9638fbab561aad3e16610bb371e008
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -28,6 +35,7 @@ import edu.wpi.first.wpilibj.Talon;
  * directory.
  */
 public class Robot extends TimedRobot {
+<<<<<<< HEAD
 
   private final PWMVictorSPX m_frontRight = new PWMVictorSPX(4);
   private final PWMVictorSPX m_frontLeft = new PWMVictorSPX(3);
@@ -44,6 +52,12 @@ public class Robot extends TimedRobot {
   private final Joystick m_stick1 = new Joystick(1);
   private final Timer m_timer = new Timer();
   private final Timer lifter_timer = new Timer();
+=======
+  private final DifferentialDrive m_robotDrive
+      = new DifferentialDrive(new PWMVictorSPX(0), new PWMVictorSPX(1));
+  private final Joystick m_stick = new Joystick(0);
+  private final Timer m_timer = new Timer();
+>>>>>>> 6996f4f27a9638fbab561aad3e16610bb371e008
 
   /**
    * This function is run when the robot is first started up and should be
@@ -87,6 +101,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopPeriodic() {
+<<<<<<< HEAD
 
     double y = m_stick.getY();
     double x = m_stick.getX();
@@ -121,15 +136,27 @@ public class Robot extends TimedRobot {
 
 
 
-  /**
-   * This function is called periodically during test mode.
-   */
-  @Override
-  public void testPeriodic() {
+=======
     double y = m_stick.getY();
     double x = m_stick.getX();
 
     System.out.println("X: "+x+", Y: "+y);
     m_robotDrive.arcadeDrive(m_stick.getY(), m_stick.getX());
+  }
+
+>>>>>>> 6996f4f27a9638fbab561aad3e16610bb371e008
+  /**
+   * This function is called periodically during test mode.
+   */
+  @Override
+  public void testPeriodic() {
+<<<<<<< HEAD
+    double y = m_stick.getY();
+    double x = m_stick.getX();
+
+    System.out.println("X: "+x+", Y: "+y);
+    m_robotDrive.arcadeDrive(m_stick.getY(), m_stick.getX());
+=======
+>>>>>>> 6996f4f27a9638fbab561aad3e16610bb371e008
   }
 }
