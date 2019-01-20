@@ -18,9 +18,8 @@ import edu.wpi.first.wpilibj.buttons.JoystickButton;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
+/* For TalonSRX operation */
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
-
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -31,23 +30,37 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
  */
 public class Robot extends TimedRobot {
 
-  private final PWMVictorSPX m_frontRight = new PWMVictorSPX(4);
-  private final PWMVictorSPX m_frontLeft = new PWMVictorSPX(3);
-  SpeedControllerGroup m_front = new SpeedControllerGroup(m_frontRight, m_frontLeft);
-
-  private final PWMVictorSPX m_rearRight = new PWMVictorSPX(2);
-  private final PWMVictorSPX m_rearLeft = new PWMVictorSPX(1);
-  SpeedControllerGroup m_rear = new SpeedControllerGroup(m_rearRight, m_rearLeft);
-
+  /* Front Motors */
+  private final PWMVictorSPX m_frontRight = new PWMVictorSPX(4);                        // Front Right Motor using PWM Victor
+  private final PWMVictorSPX m_frontLeft = new PWMVictorSPX(3);                         // Front Left Motor using PWM Victor
+  SpeedControllerGroup m_front = new SpeedControllerGroup(m_frontRight, m_frontLeft);   // Front Right + Front Left synchronized control
+  
+  /* Rear Motors */
+  private final PWMVictorSPX m_rearRight = new PWMVictorSPX(2);                         // Rear Right Motor using PWM Victor
+  private final PWMVictorSPX m_rearLeft = new PWMVictorSPX(1);                          // Rear Left Motor using PWM Victor
+  SpeedControllerGroup m_rear = new SpeedControllerGroup(m_rearRight, m_rearLeft);      // Rear Right + Rear Left synchronized control
+  
+  /* Robot Drive Combination */
   private final DifferentialDrive m_robotDrive
     = new DifferentialDrive(m_front, m_rear);
-  private final WPI_TalonSRX Lifter = new WPI_TalonSRX(1);
-  private final Joystick m_stick = new Joystick(0);
-  private final JoystickButton m_LB = new JoystickButton(m_stick, 5);
-  private final JoystickButton m_RB = new JoystickButton(m_stick, 6);
-  private final Joystick m_stick1 = new Joystick(1);
+  
+  /* Landing Gear TalonSRX */
+  private final WPI_TalonSRX m_landingGearLeft = new WPI_TalonSRX(1);     //  Left landingGear
+  private final WPI_TalonSRX m_landingGearRight = new WPI_TalonSRX(2);
+  SpeedControllerGroup m_landingGear 
+    = new SpeedControllerGroup(m_landingGearLeft, m_landingGearRight);
+
+  /* Robot Driver - AKA Driver 1 */
+  private final Joystick j_stick_driver_1 = new Joystick(1);
+
+  /* Robot Controller - AKA Driver 2 */
+  private final Joystick j_stick_driver_2 = new Joystick(0);
+  private final JoystickButton j_stick_driver_2_LB = new JoystickButton(j_stick_driver_2, 5);
+  private final JoystickButton j_stick_driver_2_RB = new JoystickButton(j_stick_driver_2, 6);
+      
+  /* Timers */
   private final Timer m_timer = new Timer();
-  private final Timer lifter_timer = new Timer();
+  private final Timer landingGear_timer = new Timer();
 
   /**
    * This function is run when the robot is first started up and should be
@@ -92,48 +105,49 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
-    double y = m_stick.getY();
-    double x = m_stick.getX();
-    if (m_LB.get()) {
-      lifter_timer.start();
-        if (lifter_timer.get() < 0.5) {
-          Lifter.set(1);
-        }
-        else {
-          Lifter.stopMotor();
-        }
-    } else {
-      Lifter.stopMotor(); // stop Lifting motor
+    /* When button is we want to run it for 0.5 seconds */
+    /* When button is held, we want it to run indefinitely */
+
+    boolean LB_pressed = j_stick_driver_2_LB.get();
+    boolean RB_pressed = j_stick_driver_2_RB.get();
+    
+    if(LB_pressed || RB_pressed){
+
+      // Reset and start the timer //
+      landingGear_timer.reset();
+      landingGear_timer.start();
+
+      if(LB_pressed){
+        // Set the motor to positive full power //
+        m_landingGear.set(1);
+      }
+      else{
+        // Set the motor to negative full power //
+        m_landingGear.set(-1);
+      }        
     }
 
-    if (m_RB.get()) {
-      lifter_timer.start();
-        if (lifter_timer.get() < 0.5) {
-          Lifter.set(-1);
-        }
-        else {
-          Lifter.stopMotor();
-        }
-    } else {
-      Lifter.stopMotor(); // stop Lifting motor
+    // If the motor is going for more than half a second, we will stop the motor and reset the timer //
+    if(landingGear_timer.get() > 0.3){
+      // Stop and reset the timer //
+      m_landingGear.stopMotor();
+      landingGear_timer.stop();
+      landingGear_timer.reset();
     }
-
-    System.out.println("X: "+x+", Y: "+y);
-    m_robotDrive.arcadeDrive(-m_stick.getY(Hand.kLeft), m_stick.getX(Hand.kRight));
+    
+    /* Drive the robot with joystick control */
+    m_robotDrive.arcadeDrive(-j_stick_driver_1.getY(Hand.kLeft), j_stick_driver_1.getX(Hand.kRight)); // Drive the robot
   }
-
-
-
 
   /**
    * This function is called periodically during test mode.
    */
   @Override
   public void testPeriodic() {
-    double y = m_stick.getY();
-    double x = m_stick.getX();
+    double x = j_stick_driver_1.getX();
+    double y = j_stick_driver_1.getY();
 
     System.out.println("X: "+x+", Y: "+y);
-    m_robotDrive.arcadeDrive(m_stick.getY(), m_stick.getX());
+    m_robotDrive.arcadeDrive(j_stick_driver_1.getY(), j_stick_driver_1.getX());
   }
 }
