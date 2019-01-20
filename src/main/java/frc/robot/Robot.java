@@ -105,30 +105,57 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
-    /* When button is we want to run it for 0.5 seconds */
-    /* When button is held, we want it to run indefinitely */
+    /* 
+      Landing gear operation:
+        - The purpose of this operation is to allow the user to deploy/retract the landing gear on the robot for climbing L2 during the endgame
+      What do we want to do:
+        1. When button is clicked, we want it to run it for 0.5 seconds
+          - Clicked is when the button goes from down to up in a short amount of time
+        2. When button is held/pressed, we want to run it indefinitely
+          - Held/Pressed is when the button goes down and stays there for a relatively medium to long period of time
+      How the code works / is implemented:
+        - Because the teleopPeriodic() function is repeatedly called every 20 milliseconds, we can consider all of the code inside of a function
+          as if it's ran inside of a loop. Therefore, when we write the code, we want to be wary of the fact that there might be code that don't 
+          need to be used until it's needed. In this case, the best way to think about this loop is a  do(action)...until(condition) loop. The 
+          reason for this is because for the first case, we want to keep the landing gear motor running for some amount of time before stopping. 
+          Therefore our action="keep running the landing gear motor at full power based on which button is pressed" and our condition="X amount 
+          of seconds". To keep track of time, I have the timer reset and immediately start after resetting. After checking whether left or right 
+          button is pressed, we set the motor power and direction accordingly. Our end condition is checking whether or not we are equal to or 
+          greater than the amount of time we want the landing gear motors to run for. For the second case, because we are continually holding the
+          button, we want the landing gears motor to run indefinitely. To do this, we have to reset and start the timer every single time a left
+          or right button is held because we never want our timer to be above 0.3 seconds. One last thing is we also want to make sure only one
+          button is pressed and when both button is pressed, we retain to prevent unknown behaviors in the code. This is done through the 
+          "^" (XOR or exclusive or) operation when we check exclusively whether which button was pressed.
+    */
 
-    boolean LB_pressed = j_stick_driver_2_LB.get();
-    boolean RB_pressed = j_stick_driver_2_RB.get();
-    
-    if(LB_pressed || RB_pressed){
+
+    boolean LB_pressed = j_stick_driver_2_LB.get();   // Check whether the LB is pressed or not. Returns a boolean value (True/False)
+    boolean RB_pressed = j_stick_driver_2_RB.get();   // Check whether the RB is pressed or not. Returns a boolean value (True/False) 
+
+    // Check if either button is exclusively pressed, (^ is the XOR operator) //
+    if(LB_pressed ^ RB_pressed){
+
+      // If either button is pressed, reset and start the timer //
 
       // Reset and start the timer //
-      landingGear_timer.reset();
-      landingGear_timer.start();
+      landingGear_timer.reset();  // This will reset the timer back to 0 seconds
+      landingGear_timer.start();  // This will start the timer counting from 0 seconds (This is because we just reset the timer)
 
+      // Check which button is pressed and set the motor power and direction accordingly //
       if(LB_pressed){
+        // If the left button is pressed //
         // Set the motor to positive full power //
-        m_landingGear.set(1);
+        m_landingGear.set(1);   // Set the landing gear to 100% power (set range is between -1.0 and 1.0)
       }
       else{
+        // If the right button is pressed //
         // Set the motor to negative full power //
-        m_landingGear.set(-1);
+        m_landingGear.set(-1);  // Set the landing gear to -100% power (set range is between -1.0 and 1.0)
       }        
     }
 
-    // If the motor is going for more than half a second, we will stop the motor and reset the timer //
-    if(landingGear_timer.get() > 0.3){
+    // If the motor is going for more than 0.3 seconds, we will stop the motor and reset the timer //
+    if(landingGear_timer.get() >= 0.3){
       // Stop and reset the timer //
       m_landingGear.stopMotor();
       landingGear_timer.stop();
