@@ -157,13 +157,15 @@ public class Robot extends TimedRobot {
     // If the motor is going for more than 0.3 seconds, we will stop the motor and reset the timer //
     if(landingGear_timer.get() >= 0.3){
       // Stop and reset the timer //
-      m_landingGear.stopMotor();
-      landingGear_timer.stop();
-      landingGear_timer.reset();
+      m_landingGear.stopMotor();    // Stop the motor
+      landingGear_timer.stop();     // Stop the timer
+      landingGear_timer.reset();    // Reset the timer
     }
     
-    /* Drive the robot with joystick control */
-    m_robotDrive.arcadeDrive(-j_stick_driver_1.getY(Hand.kLeft), j_stick_driver_1.getX(Hand.kRight)); // Drive the robot
+    /* Drive the robot with joystick control. Left analog stick controls up/down. Right analog stick controls left/right */
+    double leftJoyY = -j_stick_driver_1.getY(Hand.kLeft);   // This is reversed because of arcade drive implementation
+    double rightJoyX = j_stick_driver_1.getX(Hand.kRight);  // Grab right analog stick X value
+    m_robotDrive.arcadeDrive(leftJoyY, rightJoyX);          // Drive the robot using arcade drive
   }
 
   /**
