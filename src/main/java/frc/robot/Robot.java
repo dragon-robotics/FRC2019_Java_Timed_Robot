@@ -9,17 +9,17 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.Joystick;                  // A WPI library used for joystick control
 import edu.wpi.first.wpilibj.PWMVictorSPX;              // A WPI library used for PWM Victor Motor Contorller
-import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.TimedRobot;                // A WPI library used for Timed Robot base class
 import edu.wpi.first.wpilibj.Timer;                     // A WPI library used for timing robot operations
-import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.buttons.JoystickButton;    // A WPI library used for joystick buttons mapping
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;   // A WPI library used for controlling differential drive
 import edu.wpi.first.wpilibj.SpeedControllerGroup;      // A WPI library used for grouping motors for synchronized controls
 
 /* Pneumatics Control */
 import edu.wpi.first.wpilibj.Compressor;                // A WPI library used for controlling and obtaining the status of the compressor
+import edu.wpi.first.wpilibj.Solenoid;                  // A WPI library used for controlling and obtaining the status of the single solenoid
 import edu.wpi.first.wpilibj.DoubleSolenoid;            // A WPI library used for controlling and obtaining the status of the double solenoid
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;      // Enumeration for double solenoid direction
 
 /* For TalonSRX operation */
 import com.ctre.phoenix.motorcontrol.ControlMode;       // A CTRE library used for control mode selection in the CTRE library
@@ -55,27 +55,38 @@ public class Robot extends TimedRobot {
   SpeedControllerGroup m_landingGear 
     = new SpeedControllerGroup(m_landingGearLeft, m_landingGearRight);    // Landing Gear Group
 
+  /* Cargo TalonSRX */
+  private final WPI_TalonSRX m_cargo = new WPI_TalonSRX(1); // Cargo motor for controlling the cargo shooter
+
+  /* Hatch TalonSRX */
+  private final WPI_TalonSRX m_hatch = new WPI_TalonSRX(3); // Hatch Panel motor for controlling the elephant trunk
+
   /* Robot Driver - AKA Driver 1 */
   private final Joystick j_stick_driver = new Joystick(1);  // Drive joystick initialization
 
   /* Robot Controller - AKA Driver 2 */
   private final Joystick j_stick_control = new Joystick(0);  // Control joystick initialization
-  private final JoystickButton j_stick_control_LB = new JoystickButton(j_stick_control, 5); // Left button
-  private final JoystickButton j_stick_control_RB = new JoystickButton(j_stick_control, 6); // Right button 
-  private final JoystickButton j_stick_control_X = new JoystickButton(j_stick_control, 3);  // X button
-  private final JoystickButton j_stick_control_Y = new JoystickButton(j_stick_control, 4);  // Y button
-  private final JoystickButton j_stick_control_A = new JoystickButton(j_stick_control, 1);  // A button
-  private final JoystickButton j_stick_control_B = new JoystickButton(j_stick_control, 2);  // B button
-  
+  private final JoystickButton j_stick_control_LB = new JoystickButton(j_stick_control, 5);           // Left button
+  private final JoystickButton j_stick_control_RB = new JoystickButton(j_stick_control, 6);           // Right button 
+  private final JoystickButton j_stick_control_X = new JoystickButton(j_stick_control, 3);            // X button
+  private final JoystickButton j_stick_control_Y = new JoystickButton(j_stick_control, 4);            // Y button
+  private final JoystickButton j_stick_control_A = new JoystickButton(j_stick_control, 1);            // A button
+  private final JoystickButton j_stick_control_B = new JoystickButton(j_stick_control, 2);            // B button
+  private final JoystickButton j_stick_control_Back = new JoystickButton(j_stick_control, 7);         // Back button
+  private final JoystickButton j_stick_control_Start = new JoystickButton(j_stick_control, 8);        // Start button
+  private final JoystickButton j_stick_control_leftStick = new JoystickButton(j_stick_control, 9);    // Left-Stick button
+  private final JoystickButton j_stick_control_rightStick = new JoystickButton(j_stick_control, 10);  // Right-Stick button
+
   /* Timers */
-  private final Timer m_timer = new Timer();
-  private final Timer landingGear_timer = new Timer();
+  private final Timer m_timer = new Timer();            // Generic timer
+  private final Timer landingGear_timer = new Timer();  // Landing gear timer
 
   /* Compressor */
-  private final Compressor compressor = new Compressor(0);
+  private final Compressor compressor = new Compressor(0);  // Compressor code
   
-  /* Double Solenoid */
-  private final DoubleSolenoid doubleSolenoid = new DoubleSolenoid(1,2);
+  /* Double Solenoids */
+  private final DoubleSolenoid doubleSolenoid_Left = new DoubleSolenoid(0,1);    // The right solenoid
+  private final DoubleSolenoid doubleSolenoid_Right = new DoubleSolenoid(2,3);   // The left solenoid
 
   /**
    * This function is run when the robot is first started up and should be
@@ -143,11 +154,19 @@ public class Robot extends TimedRobot {
           seconds. One last thing is we also want to make sure only one button is pressed and when both button is pressed, we retain to prevent
           unknown behaviors in the code. This is done through the "^" (XOR or exclusive or) operation when we check exclusively whether which 
           button was pressed.
-    */
-
-
+          */
+          
+          
     boolean LB_pressed = j_stick_control_LB.get();   // Check whether the LB is pressed or not. Returns a boolean value (True/False)
     boolean RB_pressed = j_stick_control_RB.get();   // Check whether the RB is pressed or not. Returns a boolean value (True/False) 
+
+    boolean X_pressed = j_stick_control_X.get(); // Get X pressed value
+    boolean Y_pressed = j_stick_control_Y.get(); // Get Y pressed value
+    boolean A_pressed = j_stick_control_A.get(); // Get A pressed value
+    boolean B_pressed = j_stick_control_B.get(); // Get B pressed value
+
+    boolean leftStick_pressed = j_stick_control_leftStick.get();    // Get left stick pressed value
+    boolean rightStick_pressed = j_stick_control_rightStick.get();  // Get right stick pressed value
 
     // Check if either button is exclusively pressed, (^ is the XOR operator) //
     if(LB_pressed ^ RB_pressed){
@@ -162,12 +181,12 @@ public class Robot extends TimedRobot {
       if(LB_pressed){
         // If the left button is pressed //
         // Set the motor to positive full power //
-        m_landingGear.set(1);   // Set the landing gear to 100% power (set range is between -1.0 and 1.0)
+        m_landingGear.set(0.3);   // Set the landing gear to 100% power (set range is between -1.0 and 1.0)
       }
       else{
         // If the right button is pressed //
         // Set the motor to negative full power //
-        m_landingGear.set(-1);  // Set the landing gear to -100% power (set range is between -1.0 and 1.0)
+        m_landingGear.set(-0.3);  // Set the landing gear to -100% power (set range is between -1.0 and 1.0)
       }        
     }
 
@@ -183,7 +202,47 @@ public class Robot extends TimedRobot {
     double leftJoyY = j_stick_driver.getRawAxis(1);    // Grab left analog stick's X value
     double rightJoyX = j_stick_driver.getRawAxis(6);   // Grab right analog stick's Y value 
     m_robotDrive.arcadeDrive(leftJoyY, rightJoyX);       // Drive the robot using arcade drive
+
+    // Testing Pneumatics and Double Solenoid Code //
+
+    if (X_pressed) {
+      // Forward Pneumatics //
+      doubleSolenoid_Left.set(Value.kForward);  // Left solenoid go forward
+      doubleSolenoid_Right.set(Value.kForward); // Right solenoid go forward
+    } 
+    else if (Y_pressed) {
+      // Reverse Pneumatics //
+      doubleSolenoid_Left.set(Value.kReverse);  // Left solenoid go reverse
+      doubleSolenoid_Right.set(Value.kReverse); // Right solenoid go reverse
+    } 
+    else {
+      doubleSolenoid_Left.set(Value.kOff);  // Left solenoid turns off
+      doubleSolenoid_Right.set(Value.kOff); // Right solenoid turns off
+    }
+
+    // Testing Cargo Code //
+    if (A_pressed) {
+      m_cargo.set(1); // Cargo motor shoots full power forward when A is pressed
+    } 
+    else if (B_pressed) {
+      m_cargo.set(-1);  // Cargo motor shoots full power reverse when B is pressed
+    } 
+    else {
+      m_cargo.stopMotor();  // Cargo shooter motor stops if no button is pressed 
+    }
+    
+    // Testing Hatch Code //
+    if (leftStick_pressed) {
+      m_hatch.set(1);   // Hatch motor goes full power forward when A is pressed
+    } 
+    else if (rightStick_pressed) {
+      m_hatch.set(-1);  // Hatch motor goes full power forward when B is pressed
+    } 
+    else {
+      m_hatch.stopMotor();  // Hatch motor stops when no button is pressed.
+    }
   }
+
 
   /**
    * This function is called periodically during test mode.
@@ -206,15 +265,15 @@ public class Robot extends TimedRobot {
 
     if(X_pressed){
       // Forward Pneumatics //
-      doubleSolenoid.set(Value.kForward);
+      doubleSolenoid_Left.set(Value.kForward);
     }
     else if(Y_pressed){
       // Reverse Pneumatics //
-      doubleSolenoid.set(Value.kReverse);
+      doubleSolenoid_Left.set(Value.kReverse);
     }
     else if(A_pressed){
       // Off Pneumatics //
-      doubleSolenoid.set(Value.kOff);
+      doubleSolenoid_Left.set(Value.kOff);
     }
     else{
       // Toggle Compressor //
