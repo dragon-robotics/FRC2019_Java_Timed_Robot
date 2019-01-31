@@ -181,12 +181,12 @@ public class Robot extends TimedRobot {
       if(LB_pressed){
         // If the left button is pressed //
         // Set the motor to positive full power //
-        m_landingGear.set(0.3);   // Set the landing gear to 100% power (set range is between -1.0 and 1.0)
+        m_landingGear.set(1);   // Set the landing gear to 100% power (set range is between -1.0 and 1.0)
       }
       else{
         // If the right button is pressed //
         // Set the motor to negative full power //
-        m_landingGear.set(-0.3);  // Set the landing gear to -100% power (set range is between -1.0 and 1.0)
+        m_landingGear.set(-1);  // Set the landing gear to -100% power (set range is between -1.0 and 1.0)
       }        
     }
 
@@ -233,10 +233,10 @@ public class Robot extends TimedRobot {
     
     // Testing Hatch Code //
     if (leftStick_pressed) {
-      m_hatch.set(1);   // Hatch motor goes full power forward when A is pressed
+      m_hatch.set(.5);   // Hatch motor goes full power forward when A is pressed
     } 
     else if (rightStick_pressed) {
-      m_hatch.set(-1);  // Hatch motor goes full power forward when B is pressed
+      m_hatch.set(-.5);  // Hatch motor goes full power forward when B is pressed
     } 
     else {
       m_hatch.stopMotor();  // Hatch motor stops when no button is pressed.
