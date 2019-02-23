@@ -25,6 +25,9 @@ import edu.wpi.first.wpilibj.DoubleSolenoid.Value;      // Enumeration for doubl
 import com.ctre.phoenix.motorcontrol.ControlMode;       // A CTRE library used for control mode selection in the CTRE library
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;  // A CTRE library used for TalonSRX control using CAN protocol
 
+import edu.wpi.first.wpilibj.CameraServer;
+import edu.wpi.first.wpilibj.IterativeRobot;
+
 
 /**
  * The VM is configured to automatically run this class, and to call the
