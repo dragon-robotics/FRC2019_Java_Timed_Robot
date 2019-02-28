@@ -27,7 +27,6 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;  // A CTRE library used f
 
 /* For camera operation */
 import edu.wpi.first.wpilibj.CameraServer;
-import edu.wpi.first.wpilibj.IterativeRobot;
 
 
 /**
