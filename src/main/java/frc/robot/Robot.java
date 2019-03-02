@@ -26,8 +26,7 @@ import com.ctre.phoenix.motorcontrol.ControlMode;       // A CTRE library used f
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;  // A CTRE library used for TalonSRX control using CAN protocol
 
 /* For camera operation */
-import edu.wpi.first.wpilibj.CameraServer;
-
+import edu.wpi.first.cameraserver.CameraServer;
 
 /**
  * The VM is configured to automatically run this class, and to call the
