@@ -28,6 +28,13 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;  // A CTRE library used f
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.IterativeRobot;
 
+import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
+
+import edu.wpi.cscore.CvSink;
+import edu.wpi.cscore.CvSource;
+import edu.wpi.cscore.UsbCamera;
+
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -56,15 +63,15 @@ public class Robot extends TimedRobot {
   /* Cargo TalonSRX */
   private final WPI_TalonSRX m_cargo = new WPI_TalonSRX(1); // Cargo motor for controlling the cargo shooter
   
-  private final WPI_TalonSRX m_lift_cargo_left = new WPI_TalonSRX(2);
+  private final WPI_TalonSRX m_lift_cargo_left = new WPI_TalonSRX(3);
   private final WPI_TalonSRX m_lift_cargo_right = new WPI_TalonSRX(4); // Cargo motor for controlling the cargo shooter
  // SpeedControllerGroup m_lift_cargo = new SpeedControllerGroup(m_lift_cargo_left, m_lift_cargo_right);
 
+ private final Joystick j_stick_driver = new Joystick(0);  // Drive joystick initialization
   /* Hatch TalonSRX */
-  private final WPI_TalonSRX m_hatch = new WPI_TalonSRX(3); // Hatch Panel motor for controlling the elephant trunk
+  private final WPI_TalonSRX m_hatch = new WPI_TalonSRX(2); // Hatch Panel motor for controlling the elephant trunk
 
   /* Robot Driver - AKA Driver 1 */
-  private final Joystick j_stick_driver = new Joystick(0);  // Drive joystick initialization
   private final JoystickButton j_stick_driver_LB = new JoystickButton(j_stick_driver, 5);
   private final JoystickButton j_stick_driver_RB = new JoystickButton(j_stick_driver, 6);           // Right button 
   private final JoystickButton j_stick_driver_X = new JoystickButton(j_stick_driver, 3);            // X button
@@ -142,7 +149,23 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopInit() {
-  }
+    new Thread(() -> {
+      UsbCamera camera = CameraServer.getInstance().startAutomaticCapture();
+      camera.setResolution(640, 480);
+      
+      CvSink cvSink = CameraServer.getInstance().getVideo();
+      CvSource outputStream = CameraServer.getInstance().putVideo("Blur", 640, 480);
+      
+      Mat source = new Mat();
+      Mat output = new Mat();
+      
+      while(!Thread.interrupted()) {
+          cvSink.grabFrame(source);
+          Imgproc.cvtColor(source, output, Imgproc.COLOR_BGR2GRAY);
+          outputStream.putFrame(output);
+      }
+  }).start();
+}
 
   /**
    * This function is called periodically during teleoperated mode.
@@ -175,6 +198,7 @@ public class Robot extends TimedRobot {
           button was pressed.
           */
     boolean LB_driver_pressed = j_stick_driver_LB.get();      
+    boolean RB_driver_pressed = j_stick_driver_RB.get();    
           
     boolean LB_pressed = j_stick_control_LB.get();   // Check whether the LB is pressed or not. Returns a boolean value (True/False)
     boolean RB_pressed = j_stick_control_RB.get();   // Check whether the RB is pressed or not. Returns a boolean value (True/False)
@@ -221,12 +245,16 @@ public class Robot extends TimedRobot {
       landingGear_timer.stop();     // Stop the timer
       landingGear_timer.reset();    // Reset the timer
     }*/
-    double control_leftJoyX = j_stick_control.getRawAxis(1);
+    double control_leftJoyX = j_stick_control.getRawAxis(1);  
     // m_hatch.()
     
     /* Drive the robot with joystick control. Left analog stick controls up/down. Right analog stick controls left/right */
-    double leftJoyY = j_stick_driver.getRawAxis(1);    // Grab left analog stick's X value
+    double leftJoyY = -j_stick_driver.getRawAxis(1);    // Grab left analog stick's X value
     double rightJoyX = j_stick_driver.getRawAxis(4);   // Grab right analog stick's Y value
+    if (RB_driver_pressed) {
+      leftJoyY = -leftJoyY;
+      rightJoyX = -rightJoyX;
+    }
     leftJoyY = LB_driver_pressed ? leftJoyY / 2 : leftJoyY;
     rightJoyX = LB_driver_pressed ? rightJoyX / 2 : rightJoyX;
     m_robotDrive.arcadeDrive(leftJoyY, rightJoyX);       // Drive the robot using arcade drive
@@ -269,15 +297,8 @@ public class Robot extends TimedRobot {
     } 
 
     // Testing Hatch Code //
-    if (LB_pressed) {
-      m_hatch.set(-.6);   // Hatch motor goes full power forward when A is pressed
-    } 
-    else if (RB_pressed) {
-      m_hatch.set(.6);  // Hatch motor goes full power forward when B is pressed
-    } 
-    else {
-      m_hatch.stopMotor();  // Hatch motor stops when no button is pressed.
-    }
+    double leftControlJoyY = j_stick_control.getRawAxis(1) / 2.8;    // Grab left analog stick's X value
+    m_hatch.set(leftControlJoyY);   // Hatch motor goes full power forward when A is pressed
 
     // Testing Front Landing Gears //
      if (X_driver_pressed) {
