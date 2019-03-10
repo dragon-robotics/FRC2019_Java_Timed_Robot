@@ -27,7 +27,10 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;  // A CTRE library used f
 
 /* For camera operation */
 import edu.wpi.first.cameraserver.CameraServer;
-
+import io.github.pseudoresonance.pixy2api.Pixy2;
+import io.github.pseudoresonance.pixy2api.Pixy2CCC;
+//import io.github.pseudoresonance.pixy2api.Pixy2CCC.Block;
+import io.github.pseudoresonance.pixy2api.links.SPILink;
 /**
  * The VM is configured to automatically run this class, and to call the
  * functions corresponding to each mode, as described in the TimedRobot
@@ -108,6 +111,10 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     /* Start camera capture */
     CameraServer.getInstance().startAutomaticCapture();
+
+    /* Start Pixy2 */
+    Pixy2 pixy = Pixy2.createInstance(new SPILink());
+    pixy.init();
   }
 
   /**
