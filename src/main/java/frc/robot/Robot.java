@@ -26,7 +26,6 @@ import com.ctre.phoenix.motorcontrol.ControlMode;       // A CTRE library used f
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;  // A CTRE library used for TalonSRX control using CAN protocol
 
 import edu.wpi.first.cameraserver.CameraServer;
-import edu.wpi.first.wpilibj.IterativeRobot;
 
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
@@ -106,18 +105,16 @@ public class Robot extends TimedRobot {
   private final DoubleSolenoid doubleSolenoid_Hatch = new DoubleSolenoid(0,1);
   private final DoubleSolenoid doubleSolenoid_Front = new DoubleSolenoid(2,3);    // The right solenoid
   private final DoubleSolenoid doubleSolenoid_Back = new DoubleSolenoid(4,5);   // The left solenoid
-  private final DoubleSolenoid testSolenoid_2 = new DoubleSolenoid(6,7);
-  
+  private final DoubleSolenoid testSolenoid = new DoubleSolenoid(6,7);
+
   /**
    * This function is run when the robot is first started up and should be
    * used for any initialization code.
    */
   @Override
   public void robotInit() {
-
-    /* Activate Cameras */
+    /* Start camera capture */
     CameraServer.getInstance().startAutomaticCapture();
-
   }
   
   /**
