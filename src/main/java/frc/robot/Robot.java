@@ -26,10 +26,6 @@ import com.ctre.phoenix.motorcontrol.ControlMode;       // A CTRE library used f
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;  // A CTRE library used for TalonSRX control using CAN protocol
 
 import edu.wpi.first.cameraserver.CameraServer;
-import io.github.pseudoresonance.pixy2api.Pixy2;
-import io.github.pseudoresonance.pixy2api.Pixy2CCC;
-//import io.github.pseudoresonance.pixy2api.Pixy2CCC.Block;
-import io.github.pseudoresonance.pixy2api.links.SPILink;
 
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
@@ -37,6 +33,11 @@ import org.opencv.imgproc.Imgproc;
 import edu.wpi.cscore.CvSink;
 import edu.wpi.cscore.CvSource;
 import edu.wpi.cscore.UsbCamera;
+
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 
 
 /**
@@ -47,6 +48,10 @@ import edu.wpi.cscore.UsbCamera;
  * directory.
  */
 public class Robot extends TimedRobot {
+
+  private boolean m_LimelightHasValidTarget = false;
+  private double m_LimelightDriveCommand = 0.0;
+  private double m_LimelightSteerCommand = 0.0;
 
   /* Left Motors */
   private final PWMVictorSPX m_leftFront = new PWMVictorSPX(2);                         // Left Front Motor using PWM Victor
@@ -117,12 +122,15 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    /* Start camera capture */
-    CameraServer.getInstance().startAutomaticCapture();
+    new Thread(() -> {
+      UsbCamera camera = CameraServer.getInstance().startAutomaticCapture();
+      camera.setResolution(320, 240);
+      camera.setFPS(30);
+    }).start();
 
     /* Start Pixy2 */
-    Pixy2 pixy = Pixy2.createInstance(new SPILink());
-    pixy.init();
+    //Pixy2 pixy = Pixy2.createInstance(new SPILink());
+    //pixy.init();
   }
   
   /**
@@ -154,30 +162,15 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopInit() {
-    new Thread(() -> {
-      UsbCamera camera = CameraServer.getInstance().startAutomaticCapture();
-      camera.setResolution(640, 480);
-      
-      CvSink cvSink = CameraServer.getInstance().getVideo();
-      CvSource outputStream = CameraServer.getInstance().putVideo("Blur", 640, 480);
-      
-      Mat source = new Mat();
-      Mat output = new Mat();
-      
-      while(!Thread.interrupted()) {
-          cvSink.grabFrame(source);
-          Imgproc.cvtColor(source, output, Imgproc.COLOR_BGR2GRAY);
-          outputStream.putFrame(output);
-      }
-  }).start();
-}
+
+  }
 
   /**
    * This function is called periodically during teleoperated mode.
    */
   @Override
   public void teleopPeriodic() {
-
+    Update_Limelight_Tracking();
     /* 
       Landing gear operation:
         - The purpose of this operation is to allow the user to deploy/retract the landing gear on the robot for climbing L2 during the endgame
@@ -258,13 +251,27 @@ public class Robot extends TimedRobot {
     double rightJoyX = j_stick_driver.getRawAxis(4);   // Grab right analog stick's Y value
     if (RB_driver_pressed) {
       leftJoyY = -leftJoyY;
-      rightJoyX = -rightJoyX;
+      //rightJoyX = rightJoyX;
     }
-    leftJoyY = LB_driver_pressed ? leftJoyY / 2 : leftJoyY;
-    rightJoyX = LB_driver_pressed ? rightJoyX / 2 : rightJoyX;
-    m_robotDrive.arcadeDrive(leftJoyY, rightJoyX);       // Drive the robot using arcade drive
+    leftJoyY = LB_driver_pressed ? leftJoyY / 2 : leftJoyY * 0.4;
+    rightJoyX = LB_driver_pressed ? rightJoyX / 2 : rightJoyX * 0.4;
 
+    if (X_driver_pressed) {
+      if (m_LimelightHasValidTarget)
+      {
+            m_robotDrive.arcadeDrive(m_LimelightDriveCommand,m_LimelightSteerCommand);
+      }
+      else
+      {
+            m_robotDrive.arcadeDrive(0.0,0.0);
+      }
+    }
+    else
+    {
+      m_robotDrive.arcadeDrive(leftJoyY, rightJoyX);
+    }
     
+
     // Testing Cargo Lift Code //
     if (X_pressed) {
       m_lift_cargo_left.set(-0.65);
@@ -305,29 +312,29 @@ public class Robot extends TimedRobot {
     double leftControlJoyY = j_stick_control.getRawAxis(1) / 2.8;    // Grab left analog stick's X value
     m_hatch.set(leftControlJoyY);   // Hatch motor goes full power forward when A is pressed
 
-    // Testing Front Landing Gears //
-     if (X_driver_pressed) {
-      // Forward Pneumatics //
-      doubleSolenoid_Front.set(Value.kForward);  // Left solenoid go forward
-    } 
-    else if (Y_driver_pressed) {
-      doubleSolenoid_Front.set(Value.kReverse);  // Left solenoid go forward
+    // // Testing Front Landing Gears //
+    //  if (X_driver_pressed) {
+    //   // Forward Pneumatics //
+    //   doubleSolenoid_Front.set(Value.kForward);  // Left solenoid go forward
+    // } 
+    // else if (Y_driver_pressed) {
+    //   doubleSolenoid_Front.set(Value.kReverse);  // Left solenoid go forward
 
-    } 
-    else {
-      doubleSolenoid_Front.set(Value.kOff);  // Left solenoid turns off
-    }
+    // } 
+    // else {
+    //   doubleSolenoid_Front.set(Value.kOff);  // Left solenoid turns off
+    // }
 
-    // Testing Back Landing Gears //
-    if (A_driver_pressed) {
-      doubleSolenoid_Back.set(Value.kForward); // Right solenoid go forward
-    }
-    else if (B_driver_pressed) {
-      doubleSolenoid_Back.set(Value.kReverse); // Right solenoid go backward
-    }
-    else {
-      doubleSolenoid_Back.set(Value.kOff); // Right solenoid turns off
-    }  
+    // // Testing Back Landing Gears //
+    // if (A_driver_pressed) {
+    //   doubleSolenoid_Back.set(Value.kForward); // Right solenoid go forward
+    // }
+    // else if (B_driver_pressed) {
+    //   doubleSolenoid_Back.set(Value.kReverse); // Right solenoid go backward
+    // }
+    // else {
+    //   doubleSolenoid_Back.set(Value.kOff); // Right solenoid turns off
+    // }  
 
   }
   
@@ -369,5 +376,48 @@ public class Robot extends TimedRobot {
     //   compressor.setClosedLoopControl(compressor_enabled);
     // } 
 
+  }
+
+  public void Update_Limelight_Tracking()
+  {
+        // These numbers must be tuned for your Robot!  Be careful!
+        final double STEER_K = 0.03;                    // how hard to turn toward the target
+        final double DRIVE_K = 0.25;                    // how hard to drive fwd toward the target
+        final double DESIRED_TARGET_AREA = 5.0;        // Area of the target when the robot reaches the wall
+        final double MAX_DRIVE = 0.3;                   // Simple speed limit so we don't drive too fast
+
+        double tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
+        double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
+        double ty = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0);
+        double ta = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ta").getDouble(0);
+
+        // System.out.println(tv);
+        // System.out.println(tx);
+        // System.out.println(ty);
+        // System.out.println(ta);
+
+        if (tv < 1.0)
+        {
+          m_LimelightHasValidTarget = false;
+          m_LimelightDriveCommand = 0.0;
+          m_LimelightSteerCommand = 0.0;
+          return;
+        }
+
+        m_LimelightHasValidTarget = true;
+
+        // Start with proportional steering
+        double steer_cmd = tx * STEER_K;
+        m_LimelightSteerCommand = steer_cmd;
+
+        // try to drive forward until the target area reaches our desired area
+        double drive_cmd = (DESIRED_TARGET_AREA - ta) * DRIVE_K;
+
+        // don't let the robot drive too fast into the goal
+        if (drive_cmd > MAX_DRIVE)
+        {
+          drive_cmd = MAX_DRIVE;
+        }
+        m_LimelightDriveCommand = drive_cmd;
   }
 }
